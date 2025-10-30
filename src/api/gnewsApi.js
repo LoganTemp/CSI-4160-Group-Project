@@ -1,5 +1,3 @@
-// src/api/gnewsApi.js
-
 const API_KEY = "ec887e71140706ab5e391266b8857ee4";
 const BASE_URL = "https://gnews.io/api/v4/top-headlines";
 

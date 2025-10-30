@@ -1,5 +1,3 @@
-// src/api/guardianApi.js
-
 const API_KEY = "0403637b-bcf9-4be1-bd24-5285a845b56a";
 const BASE_URL = "https://content.guardianapis.com/search";
 

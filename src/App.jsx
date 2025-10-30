@@ -1,8 +1,11 @@
 import { useState } from "react";
 import HomePage from "./HomePage";
-import { getNews } from "./api/newsApi"; // Mediastack
+import { getNews } from "./api/mediastackApi"; // Mediastack
 import { getGuardianNews } from "./api/guardianApi"; // Guardian
 import { getGNews } from "./api/gnewsApi"; // GNews
+import { getNewsAPI } from "./api/newsApi"; //NewsAPI
+import { getFactChecks } from "./api/factCheckApi"; // Factcheck Google
+import { getGdeltNews } from "./api/gdeltApi"; // GDELT
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
@@ -12,41 +15,52 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  async function handleGenerate({ country, topic }) {
-    setErrorMsg("");
-    setSummary("");
-    setLoading(true);
+ async function handleGenerate({ country, topic }) {
+  setErrorMsg("");
+  setSummary("");
+  setLoading(true);
 
-    try {
-            const [mediastack, guardian, gnews] = await Promise.all([
+  try {
+    const [mediastack, guardian, gnews, newsapi, factcheck, gdelt] =
+      await Promise.all([
         getNews(country, topic),
         getGuardianNews(country, topic),
         getGNews(country, topic),
+        getNewsAPI(country, topic),
+        getFactChecks(topic),
+        getGdeltNews(topic),
       ]);
-      
-      const allArticles = [...mediastack, ...guardian, ...gnews];
-      const uniqueArticles = Array.from(
-        new Map(allArticles.map((a) => [a.url, a])).values()
-      );
 
-      setArticles(uniqueArticles);
+    const allArticles = [
+      ...mediastack,
+      ...guardian,
+      ...gnews,
+      ...newsapi,
+      ...factcheck,
+      ...gdelt,
+    ];
 
-      
-      const qs = new URLSearchParams({ country, topic }).toString();
-      const res = await fetch(`${API_BASE}/api/summary?${qs}`);
-      if (!res.ok) throw new Error(`summary fetch failed: ${res.status}`);
+    const uniqueArticles = Array.from(
+      new Map(allArticles.map((a) => [a.url, a])).values()
+    );
 
-      const json = await res.json();
-      setSummary(json.summary || "No summary available.");
-    } catch (err) {
-      console.error(err);
-      setErrorMsg(
-        `Could not generate summary. Check backend on ${API_BASE} and browser console.`
-      );
-    } finally {
-      setLoading(false);
-    }
+    setArticles(uniqueArticles);
+
+    const qs = new URLSearchParams({ country, topic }).toString();
+    const res = await fetch(`${API_BASE}/api/summary?${qs}`);
+    if (!res.ok) throw new Error(`summary fetch failed: ${res.status}`);
+    const json = await res.json();
+    setSummary(json.summary || "No summary available.");
+  } catch (err) {
+    console.error(err);
+    setErrorMsg(
+      `Could not generate summary. Check backend on ${API_BASE} and browser console.`
+    );
+  } finally {
+    setLoading(false);
   }
+}
+
 
   return (
     <div style={{ padding: 24 }}>
