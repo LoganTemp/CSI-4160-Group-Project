@@ -1,6 +1,11 @@
 import { useState } from "react";
 import HomePage from "./HomePage";
-import { getNews } from "./api/newsApi";
+import { getNews } from "./api/mediastackApi"; // Mediastack
+import { getGuardianNews } from "./api/guardianApi"; // Guardian
+import { getGNews } from "./api/gnewsApi"; // GNews
+import { getNewsAPI } from "./api/newsApi"; // NewsAPI
+import { getFactChecks } from "./api/factCheckApi"; // Factcheck Google
+import { getGdeltNews } from "./api/gdeltApi"; // GDELT
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
@@ -16,15 +21,37 @@ export default function App() {
     setLoading(true);
 
     try {
-      // 1) Fetch news (your existing function)
-      const data = await getNews(country, topic);
-      setArticles(Array.isArray(data) ? data : []);
+      // fetch from ALL sources in parallel
+      const [mediastack, guardian, gnews, newsapi, factcheck, gdelt] =
+        await Promise.all([
+          getNews(country, topic),
+          getGuardianNews(country, topic),
+          getGNews(country, topic),
+          getNewsAPI(country, topic),
+          getFactChecks(topic),
+          getGdeltNews(topic),
+        ]);
 
-      // 2) Ask backend for Gemini summary
+      // combine and dedupe by URL
+      const allArticles = [
+        ...mediastack,
+        ...guardian,
+        ...gnews,
+        ...newsapi,
+        ...factcheck,
+        ...gdelt,
+      ];
+
+      const uniqueArticles = Array.from(
+        new Map(allArticles.map((a) => [a.url, a])).values()
+      );
+
+      setArticles(uniqueArticles);
+
+      // ask backend (Gemini) for summary
       const qs = new URLSearchParams({ country, topic }).toString();
       const res = await fetch(`${API_BASE}/api/summary?${qs}`);
       if (!res.ok) throw new Error(`summary fetch failed: ${res.status}`);
-
       const json = await res.json();
       setSummary(json.summary || "No summary available.");
     } catch (err) {
@@ -43,11 +70,46 @@ export default function App() {
         <HomePage onGenerate={handleGenerate} />
       ) : (
         <div>
-          <button onClick={() => { setArticles(null); setSummary(""); setErrorMsg(""); }}>
+          <button
+            onClick={() => {
+              setArticles(null);
+              setSummary("");
+              setErrorMsg("");
+            }}
+          >
             ← Back
           </button>
 
-          <h2 style={{ marginTop: 16 }}>Top News</h2>
+          {/* 🧠 Gemini Summary ABOVE Top News */}
+          <div
+            style={{
+              marginTop: 24,
+              background: "#f8f9fa",
+              border: "1px solid #ddd",
+              borderRadius: 8,
+              padding: "12px 16px",
+            }}
+          >
+            <h3 style={{ color: "#a020f0", marginTop: 0 }}>🧠 Gemini Summary</h3>
+            {loading ? (
+              <p>Generating summary…</p>
+            ) : errorMsg ? (
+              <p style={{ color: "#b91c1c" }}>{errorMsg}</p>
+            ) : (
+              <pre
+                style={{
+                  background: "#fff",
+                  padding: "1em",
+                  borderRadius: "8px",
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {summary || "No summary yet."}
+              </pre>
+            )}
+          </div>
+
+          <h2 style={{ marginTop: 24 }}>Top News (All Sources)</h2>
           {articles.length === 0 ? (
             <p>No news found for your selection.</p>
           ) : (
@@ -58,31 +120,13 @@ export default function App() {
                     <strong>{a.title}</strong>
                   </a>
                   <p>{a.description}</p>
-                  <small>{a.source}</small>
+                  <small style={{ color: "#666" }}>
+                    Source: {a.source}
+                  </small>
                 </li>
               ))}
             </ul>
           )}
-
-          <div style={{ marginTop: 24 }}>
-            <h3>🧠 Gemini Summary</h3>
-            {loading ? (
-              <p>Generating summary…</p>
-            ) : errorMsg ? (
-              <p style={{ color: "#b91c1c" }}>{errorMsg}</p>
-            ) : (
-              <pre
-                style={{
-                  background: "#f9f9f9",
-                  padding: "1em",
-                  borderRadius: "8px",
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                {summary || "No summary yet."}
-              </pre>
-            )}
-          </div>
         </div>
       )}
     </div>
