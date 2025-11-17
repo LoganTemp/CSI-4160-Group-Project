@@ -6,6 +6,7 @@ import { getGNews } from "./api/gnewsApi"; // GNews
 import { getNewsAPI } from "./api/newsApi"; // NewsAPI
 import { getFactChecks } from "./api/factCheckApi"; // Factcheck Google
 import { getGdeltNews } from "./api/gdeltApi"; // GDELT
+import "./App.css";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
@@ -65,12 +66,13 @@ export default function App() {
   }
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="results-page">
       {!articles ? (
         <HomePage onGenerate={handleGenerate} />
       ) : (
-        <div>
+        <div className="results-container">
           <button
+            className="back-btn"
             onClick={() => {
               setArticles(null);
               setSummary("");
@@ -80,49 +82,37 @@ export default function App() {
             ← Back
           </button>
 
-          {/* 🧠 Gemini Summary ABOVE Top News */}
-          <div
-            style={{
-              marginTop: 24,
-              background: "#f8f9fa",
-              border: "1px solid #ddd",
-              borderRadius: 8,
-              padding: "12px 16px",
-            }}
-          >
-            <h3 style={{ color: "#a020f0", marginTop: 0 }}>🧠 Gemini Summary</h3>
+          {/* Gemini Summary */}
+          <div className="summary-card">
+            <h3 className="summary-title">🧠 Gemini Summary</h3>
+
             {loading ? (
-              <p>Generating summary…</p>
+              <p className="loading">Generating summary…</p>
             ) : errorMsg ? (
-              <p style={{ color: "#b91c1c" }}>{errorMsg}</p>
+              <p className="error-text">{errorMsg}</p>
             ) : (
-              <pre
-                style={{
-                  background: "#fff",
-                  padding: "1em",
-                  borderRadius: "8px",
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                {summary || "No summary yet."}
-              </pre>
+              <pre className="summary-pre">{summary || "No summary yet."}</pre>
             )}
           </div>
 
-          <h2 style={{ marginTop: 24 }}>Top News (All Sources)</h2>
+          <h2 className="news-header">Top News (All Sources)</h2>
+
           {articles.length === 0 ? (
-            <p>No news found for your selection.</p>
+            <p className="no-news">No news found for your selection.</p>
           ) : (
-            <ul>
+            <ul className="news-list">
               {articles.map((a, i) => (
-                <li key={i} style={{ marginBottom: 12 }}>
-                  <a href={a.url} target="_blank" rel="noreferrer">
+                <li key={i} className="news-item">
+                  <a
+                    href={a.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="news-link"
+                  >
                     <strong>{a.title}</strong>
                   </a>
-                  <p>{a.description}</p>
-                  <small style={{ color: "#666" }}>
-                    Source: {a.source}
-                  </small>
+                  <p className="news-description">{a.description}</p>
+                  <small className="news-source">Source: {a.source}</small>
                 </li>
               ))}
             </ul>

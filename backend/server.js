@@ -49,14 +49,18 @@ app.get("/api/summary", async (req, res) => {
     const model = genAI.getGenerativeModel({ model: MODEL });
 
     const prompt = `
-      Provide a concise 3–5 sentence summary of the most recent "${topic}" news in ${country}.
+      Provide a concise 3–5 sentence summary of the most recent "${topic}" news in country ${country}.
       Keep it neutral, factual, and clearly structured. Include any major global events or themes.
     `;
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
 
-    console.log("🧠 Gemini summary (first 120 chars):", text.slice(0, 120), "…");
+    console.log(
+      "🧠 Gemini summary (first 120 chars):",
+      text.slice(0, 120),
+      "…"
+    );
     res.json({ ok: true, summary: text, model: MODEL });
   } catch (e) {
     console.error("❌ /api/summary error:", e);
