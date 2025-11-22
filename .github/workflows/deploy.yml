@@ -13,6 +13,13 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      - name: Create backend .env from GitHub Secrets
+        run: |
+          mkdir -p backend
+          echo "GOOGLE_API_KEY=${{ secrets.GOOGLE_API }}" > backend/.env
+          echo "PORT=3001" >> backend/.env
+          echo "GEMINI_MODEL=gemini-2.0-flash" >> backend/.env
+
       - name: Use Node.js 20
         uses: actions/setup-node@v3
         with:
